@@ -55,6 +55,11 @@ h1 span { color: #e4bd62; font-style: italic; }
 .seat__role { margin-top: 2px; color: #aabbb1; font-size: .62rem; }
 .seat__bankroll { margin-top: 5px; color: #e8c86f; font-size: .74rem; }
 .seat--human .seat__identity { border-color: #dfb652; box-shadow: 0 0 0 1px rgba(238, 194, 81, .25), 0 5px 15px rgba(0,0,0,.4); }
+.seat--acting .seat__identity { border-color: #f4bd51; box-shadow: 0 0 18px rgba(244, 189, 81, .48); }
+.seat--folded { opacity: .48; filter: grayscale(.7); }
+.seat__commitment { display: block; margin-top: 3px; color: #92b8a4; font-size: .62rem; }
+.card-face { color: #17231e; font-family: Georgia, serif; font-size: .78rem; font-weight: 700; }
+.card-face--red { color: #a81e28; }
 .seat--0 { top: 4%; left: 50%; transform: translateX(-50%); }
 .seat--1 { top: 25%; right: -4%; }
 .seat--2 { right: 1%; bottom: 13%; }
@@ -62,6 +67,9 @@ h1 span { color: #e4bd62; font-style: italic; }
 .seat--4 { bottom: 13%; left: 1%; }
 .seat--5 { top: 25%; left: -4%; }
 .dealer-button { position: absolute; top: -10px; right: -10px; display: grid; width: 24px; height: 24px; place-items: center; border: 2px solid #d1ae5e; border-radius: 50%; background: #f3e7c6; color: #22180a; font-family: Georgia, serif; font-size: .72rem; font-weight: 700; }
+.blind-marker { position: absolute; right: -8px; bottom: -8px; border-radius: 9px; padding: 3px 5px; background: #294e95; color: #fff; font-size: .55rem; font-weight: 800; }
+.blind-marker--big { background: #9d3030; }
+.side-pot-label { margin: 9px 0 0; color: #c7d9cf; font-size: .68rem; }
 
 .control-deck { display: grid; grid-template-columns: 1fr auto; gap: 22px; align-items: end; margin-top: 14px; padding: 18px; border: 1px solid rgba(194, 167, 98, .23); border-radius: 12px; background: rgba(7, 20, 15, .74); box-shadow: 0 12px 34px rgba(0,0,0,.18); }
 .table-message p { max-width: 440px; margin: 5px 0 0; color: #d7dfd9; font-size: .9rem; line-height: 1.45; }
@@ -73,6 +81,12 @@ h1 span { color: #e4bd62; font-style: italic; }
 .action-buttons { display: flex; gap: 8px; }
 .action-buttons button { min-height: 40px; padding: 0 14px; border: 1px solid #526258; border-radius: 6px; background: #1b2b23; color: #7d8d83; cursor: not-allowed; font-size: .78rem; font-weight: 800; }
 .action-buttons .action-buttons__raise { border-color: #6d5730; background: #3d301c; color: #a99261; }
+.deal-button { min-height: 40px; border: 1px solid #d7b65c; border-radius: 6px; padding: 0 16px; background: #c59636; color: #1c170d; cursor: pointer; font-size: .78rem; font-weight: 900; }
+.deal-button:disabled { border-color: #526258; background: #1b2b23; color: #7d8d83; cursor: not-allowed; }
+.validation-message { color: #ffb1a9 !important; }
+.history-panel { width: min(1180px, 100%); margin: 18px auto 0; padding: 16px 18px; border: 1px solid rgba(194, 167, 98, .23); border-radius: 12px; background: rgba(7, 20, 15, .74); }
+.history-panel h2 { margin: 0 0 8px; color: #e5bd61; font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
+.history-panel ol { max-height: 144px; margin: 0; padding-left: 20px; overflow: auto; color: #cdd8d0; font-size: .78rem; line-height: 1.65; }
 
 @media (max-width: 780px) {
   .app-shell { padding-top: 20px; }
@@ -92,6 +106,6 @@ h1 span { color: #e4bd62; font-style: italic; }
   .control-deck { margin-top: 0; }
   .action-panel { align-items: stretch; flex-direction: column; }
   .raise-control__input { width: 100%; }
-  .action-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  .action-buttons { display: grid; grid-template-columns: 1fr 1fr; }
   .action-buttons button { padding-inline: 7px; font-size: .68rem; }
 }
