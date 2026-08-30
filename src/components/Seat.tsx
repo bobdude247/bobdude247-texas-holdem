@@ -1,11 +1,10 @@
 import { formatChips } from '../presentation/format'
 import { formatCardShort, isRedSuit } from '../domain/cards'
-import type { HandPlayer, MatchPlayer } from '../domain/holdem/types'
-import type { PublicHandPlayer } from '../domain/holdem/public'
+import type { PublicHandPlayer, PublicMatchPlayer } from '../domain/holdem/public'
 import { PlayingCard } from './PlayingCard'
 
 interface SeatProps {
-  readonly player: MatchPlayer | HandPlayer | PublicHandPlayer
+  readonly player: PublicMatchPlayer | PublicHandPlayer
   readonly isDealer?: boolean
   readonly isSmallBlind?: boolean
   readonly isBigBlind?: boolean

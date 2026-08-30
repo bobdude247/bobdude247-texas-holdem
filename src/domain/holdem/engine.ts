@@ -92,7 +92,9 @@ export function startNextHand(match: MatchState, random: RandomSource = systemRa
   if (match.hand !== undefined && match.hand.phase !== 'complete') throw new Error('The current hand must complete before another can start.')
   const funded = fundedSeats(match.players)
   if (funded.length < 2) {
-    return { ...match, matchWinnerSeat: funded[0] }
+    // A terminal match has no active hand. This prevents stale cards from a prior
+    // completed hand from surviving a repeated start request.
+    return { ...match, hand: undefined, matchWinnerSeat: funded[0] }
   }
   const button = match.handNumber === 0 && funded.includes(match.button) ? match.button : nextSeat(funded, match.button)
   const smallBlindSeat = funded.length === 2 ? button : nextSeat(funded, button)
@@ -309,6 +311,25 @@ export function assertChipConservation(match: MatchState): void {
   if (stackTotal + committed !== baseline) throw new Error(`Chip conservation failed: expected ${baseline}, received ${stackTotal + committed}.`)
 }
 
+/** Builds the only private view a CPU strategy may receive. */
+export function createCpuDecisionContext(match: MatchState, seat: SeatNumber): import('./types').CpuDecisionContext {
+  const hand = match.hand
+  if (hand === undefined || hand.phase === 'complete' || hand.actingSeat !== seat) throw new Error('It is not this CPU’s turn.')
+  const player = findPlayer(hand.players, seat)
+  if (player.kind !== 'cpu') throw new Error('CPU context is only available for CPU players.')
+  const legal = legalActions(match, seat)
+  return {
+    seat,
+    holeCards: player.holeCards.map((card) => ({ ...card })),
+    board: hand.board.map((card) => ({ ...card })),
+    legalActions: { ...legal },
+    publicHistory: hand.history.map((item) => ({ ...item })),
+    players: hand.players.map(({ seat: playerSeat, stack, streetContribution, totalContribution, folded, allIn }) => ({ seat: playerSeat, stack, streetContribution, totalContribution, folded, allIn })),
+    pots: buildPots(hand.players).pots.map((pot) => ({ ...pot, eligibleSeats: [...pot.eligibleSeats] })),
+    button: hand.button,
+  }
+}
+
 export function runCpuTurns(match: MatchState, controller: CpuController, limit = 100): MatchState {
   let next = match
   for (let count = 0; count < limit; count += 1) {
@@ -316,8 +337,7 @@ export function runCpuTurns(match: MatchState, controller: CpuController, limit 
     if (hand === undefined || hand.phase === 'complete' || hand.actingSeat === undefined) return next
     const player = findPlayer(hand.players, hand.actingSeat)
     if (player.kind !== 'cpu') return next
-    const legal = legalActions(next, player.seat)
-    const action = controller({ seat: player.seat, holeCards: player.holeCards, board: hand.board, legalActions: legal, publicHistory: hand.history, players: hand.players.map(({ seat, stack, streetContribution, totalContribution, folded, allIn }) => ({ seat, stack, streetContribution, totalContribution, folded, allIn })), pots: buildPots(hand.players).pots, button: hand.button })
+    const action = controller(createCpuDecisionContext(next, player.seat))
     next = applyAction(next, player.seat, action)
   }
   // The caller may deliberately process a single CPU action for presentation pacing.
