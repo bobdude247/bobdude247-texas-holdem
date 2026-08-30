@@ -33,7 +33,7 @@ npm run build
 
 Bet and raise actions use a canonical **raise-to** amount: the total amount a player has committed on the current street, not an incremental amount. The engine exposes legal action bounds and rejects invalid/out-of-turn actions without mutating prior state.
 
-A full raise reopens raising rights for all opponents still able to act. A short all-in raise increases the call amount but does not reopen a player who already acted; players who have not acted retain their normal legal options. Cumulative short-raise reopening is not yet implemented and remains a rules-engine audit limitation.
+A full raise reopens raising rights for all opponents still able to act. A short all-in raise increases the call amount but does not by itself reopen a player who already acted; players who have not acted retain their normal legal options. The engine tracks a per-player reopen threshold, so consecutive short all-ins reopen a prior player's raising right once their cumulative increase reaches a full raise.
 
 ## Deployment
 

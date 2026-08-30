@@ -65,6 +65,24 @@ function dealHoleCards(players: readonly HandPlayer[], button: SeatNumber, deckC
 function activeSeats(hand: HandState): SeatNumber[] { return hand.players.filter(canAct).map((player) => player.seat) }
 function liveSeats(hand: HandState): SeatNumber[] { return hand.players.filter(isLive).map((player) => player.seat) }
 
+function freshRaiseReopenAt(players: readonly HandPlayer[]): Record<SeatNumber, ChipAmount> {
+  const reopenAt: Record<SeatNumber, ChipAmount> = {}
+  for (const player of players) reopenAt[player.seat] = zero
+  return reopenAt
+}
+
+function raiseReopenAt(hand: HandState, seat: SeatNumber): ChipAmount {
+  return hand.raiseReopenAt[seat] ?? zero
+}
+
+function withRaiseReopenAt(hand: HandState, seat: SeatNumber, amount: ChipAmount): HandState {
+  return { ...hand, raiseReopenAt: { ...hand.raiseReopenAt, [seat]: amount } }
+}
+
+function actedRaiseReopenAt(hand: HandState, config: HoldemConfig): ChipAmount {
+  return asChips(hand.currentBet + (hand.currentBet === 0 ? config.bigBlind : hand.lastFullRaise))
+}
+
 function nextPending(hand: HandState, from: SeatNumber): SeatNumber | undefined {
   const candidates = hand.pendingSeats.filter((seat) => canAct(findPlayer(hand.players, seat)))
   return candidates.length === 0 ? undefined : nextSeat(candidates, from)
@@ -96,7 +114,7 @@ export function startNextHand(match: MatchState, random: RandomSource = systemRa
     id: match.handNumber + 1, phase: 'preflop', button, smallBlindSeat, bigBlindSeat,
     players: bigBlind.players, deck: { cards: dealt.deckCards }, burnedCards: [], board: [], showdown: false, actingSeat: firstActor,
     currentBet, lastFullRaise: match.config.bigBlind, pendingSeats: preflopSeats,
-    raiseAllowedSeats: preflopSeats, history: [
+    raiseReopenAt: freshRaiseReopenAt(bigBlind.players), history: [
       event('blind', `${findPlayer(bigBlind.players, smallBlindSeat).name} posts small blind $${smallBlind.amount.toLocaleString()}`, smallBlindSeat),
       event('blind', `${findPlayer(bigBlind.players, bigBlindSeat).name} posts big blind $${bigBlind.amount.toLocaleString()}`, bigBlindSeat),
     ], pots: [], payouts: [], winners: [],
@@ -116,7 +134,8 @@ export function legalActions(match: MatchState, seat: SeatNumber): LegalActions 
   const cappedCallAmount = asChips(Math.min(amountToCall, player.stack))
   const maximumTo = asChips(player.streetContribution + player.stack)
   const opponents = opponentsCanRespond(hand, seat)
-  const canRaise = hand.currentBet > 0 && opponents && hand.raiseAllowedSeats.includes(seat) && maximumTo > hand.currentBet
+  const canRaise = hand.currentBet > 0 && opponents && hand.currentBet >= raiseReopenAt(hand, seat) && maximumTo > hand.currentBet
+  const canAllIn = player.stack > 0 && opponents && (hand.currentBet === 0 || maximumTo <= hand.currentBet || canRaise)
   return {
     seat, amountToCall, cappedCallAmount,
     canFold: true,
@@ -124,7 +143,7 @@ export function legalActions(match: MatchState, seat: SeatNumber): LegalActions 
     canCall: amountToCall > 0 && player.stack > 0,
     canBet: hand.currentBet === 0 && opponents && maximumTo >= match.config.bigBlind,
     canRaise,
-    canAllIn: player.stack > 0 && opponents,
+    canAllIn,
     minimumBetTo: hand.currentBet === 0 ? match.config.bigBlind : undefined,
     minimumRaiseTo: canRaise ? asChips(hand.currentBet + hand.lastFullRaise) : undefined,
     maximumTo,
@@ -146,7 +165,7 @@ function dealStreet(hand: HandState): HandState {
   const boardDraw = drawCards(draw.deck, boardCount)
   const phase = hand.phase === 'preflop' ? 'flop' : hand.phase === 'flop' ? 'turn' : 'river'
   const resetPlayers = hand.players.map((player) => ({ ...player, streetContribution: zero }))
-  const reset: HandState = { ...hand, phase, players: resetPlayers, deck: boardDraw.deck, burnedCards: [...hand.burnedCards, burn], board: [...hand.board, ...boardDraw.drawn], currentBet: zero, lastFullRaise: zero, pendingSeats: resetPlayers.filter(canAct).map((player) => player.seat), raiseAllowedSeats: resetPlayers.filter(canAct).map((player) => player.seat), history: [...hand.history, event('street', phase === 'flop' ? 'Flop dealt' : phase === 'turn' ? 'Turn dealt' : 'River dealt')] }
+  const reset: HandState = { ...hand, phase, players: resetPlayers, deck: boardDraw.deck, burnedCards: [...hand.burnedCards, burn], board: [...hand.board, ...boardDraw.drawn], currentBet: zero, lastFullRaise: zero, pendingSeats: resetPlayers.filter(canAct).map((player) => player.seat), raiseReopenAt: freshRaiseReopenAt(resetPlayers), history: [...hand.history, event('street', phase === 'flop' ? 'Flop dealt' : phase === 'turn' ? 'Turn dealt' : 'River dealt')] }
   const candidates = reset.pendingSeats
   return { ...reset, actingSeat: candidates.length === 0 ? undefined : nextSeat(candidates, hand.button) }
 }
@@ -232,21 +251,21 @@ export function applyAction(match: MatchState, seat: SeatNumber, action: PlayerA
   let description = ''
   if (action.type === 'fold') {
     if (!legal.canFold) throw new Error('Folding is not legal.')
-    next = { ...hand, players: replacePlayer(hand.players, { ...player, folded: true }), pendingSeats: hand.pendingSeats.filter((candidate) => candidate !== seat), raiseAllowedSeats: hand.raiseAllowedSeats.filter((candidate) => candidate !== seat) }
+    next = withRaiseReopenAt({ ...hand, players: replacePlayer(hand.players, { ...player, folded: true }), pendingSeats: hand.pendingSeats.filter((candidate) => candidate !== seat) }, seat, actedRaiseReopenAt(hand, match.config))
     description = `${player.name} folds`
   } else if (action.type === 'check') {
     if (!legal.canCheck) throw new Error('Checking is not legal while facing a wager.')
-    next = { ...hand, pendingSeats: hand.pendingSeats.filter((candidate) => candidate !== seat), raiseAllowedSeats: hand.raiseAllowedSeats.filter((candidate) => candidate !== seat) }
+    next = withRaiseReopenAt({ ...hand, pendingSeats: hand.pendingSeats.filter((candidate) => candidate !== seat) }, seat, actedRaiseReopenAt(hand, match.config))
     description = `${player.name} checks`
   } else if (action.type === 'call') {
     if (!legal.canCall) throw new Error('Calling is not legal.')
     next = contribution(hand, seat, asChips(player.streetContribution + legal.cappedCallAmount))
-    next = { ...next, pendingSeats: next.pendingSeats.filter((candidate) => candidate !== seat), raiseAllowedSeats: next.raiseAllowedSeats.filter((candidate) => candidate !== seat) }
+    next = withRaiseReopenAt({ ...next, pendingSeats: next.pendingSeats.filter((candidate) => candidate !== seat) }, seat, actedRaiseReopenAt(hand, match.config))
     description = `${player.name} calls $${legal.cappedCallAmount.toLocaleString()}`
   } else if (action.type === 'all-in' && legal.maximumTo <= hand.currentBet) {
     if (!legal.canAllIn) throw new Error('All-in is not legal.')
     next = contribution(hand, seat, legal.maximumTo)
-    next = { ...next, pendingSeats: next.pendingSeats.filter((candidate) => candidate !== seat), raiseAllowedSeats: next.raiseAllowedSeats.filter((candidate) => candidate !== seat) }
+    next = withRaiseReopenAt({ ...next, pendingSeats: next.pendingSeats.filter((candidate) => candidate !== seat) }, seat, actedRaiseReopenAt(hand, match.config))
     description = `${player.name} calls all-in for $${legal.maximumTo.toLocaleString()}`
   } else {
     const to = action.type === 'all-in' ? legal.maximumTo : action.to
@@ -265,7 +284,12 @@ export function applyAction(match: MatchState, seat: SeatNumber, action: PlayerA
     fullRaise = hand.currentBet === 0 ? to >= match.config.bigBlind : raiseSize >= hand.lastFullRaise
     const activeOpponents = next.players.filter((candidate) => candidate.seat !== seat && canAct(candidate)).map((candidate) => candidate.seat)
     const owes = activeOpponents.filter((candidate) => findPlayer(next.players, candidate).streetContribution < to)
-    next = { ...next, currentBet: to, lastFullRaise: fullRaise ? raiseSize : hand.lastFullRaise, lastAggressor: seat, pendingSeats: owes, raiseAllowedSeats: fullRaise ? activeOpponents : next.raiseAllowedSeats.filter((candidate) => candidate !== seat) }
+    const previousFullRaise = hand.currentBet === 0 ? match.config.bigBlind : hand.lastFullRaise
+    const reopenAmount = asChips(to + (fullRaise ? raiseSize : previousFullRaise))
+    const reopenState = fullRaise
+      ? { ...freshRaiseReopenAt(next.players), [seat]: reopenAmount }
+      : { ...hand.raiseReopenAt, [seat]: reopenAmount }
+    next = { ...next, currentBet: to, lastFullRaise: fullRaise ? raiseSize : previousFullRaise, lastAggressor: seat, pendingSeats: owes, raiseReopenAt: reopenState }
     description = action.type === 'all-in' ? `${player.name} is all-in for $${to.toLocaleString()}` : `${player.name} ${wagerType}s to $${to.toLocaleString()}`
   }
   next = { ...next, history: [...next.history, event('action', description, seat)] }

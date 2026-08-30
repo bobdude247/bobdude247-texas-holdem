@@ -80,7 +80,7 @@ export function settleFixture(fixture: SettlementFixture): MatchState {
       currentBet: zero,
       lastFullRaise: zero,
       pendingSeats: [fixture.settlingSeat],
-      raiseAllowedSeats: [fixture.settlingSeat],
+      raiseReopenAt: Object.fromEntries(handPlayers.map((player) => [player.seat, zero])),
       history: [],
       pots: [],
       payouts: [],

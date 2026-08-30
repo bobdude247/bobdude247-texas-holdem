@@ -79,7 +79,11 @@ export interface HandState {
   readonly currentBet: ChipAmount
   readonly lastFullRaise: ChipAmount
   readonly pendingSeats: readonly SeatNumber[]
-  readonly raiseAllowedSeats: readonly SeatNumber[]
+  /**
+   * The lowest street contribution that reopens each player's right to raise.
+   * A zero value means the player has not yet used their raising right this street.
+   */
+  readonly raiseReopenAt: Readonly<Record<SeatNumber, ChipAmount>>
   readonly lastAggressor?: SeatNumber
   readonly history: readonly ActionEvent[]
   readonly pots: readonly Pot[]
