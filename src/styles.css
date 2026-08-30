@@ -52,6 +52,8 @@ h1 span { color: #e4bd62; font-style: italic; }
 .seat__identity { min-width: 0; padding: 8px 10px; border: 1px solid rgba(244, 224, 168, .27); border-radius: 7px; background: rgba(4, 19, 14, .78); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
 .seat__name, .seat__role, .seat__bankroll { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seat__name { font-size: .8rem; font-weight: 800; }
+.seat__personality { display: inline-block; margin-top: 3px; border-radius: 999px; padding: 2px 5px; background: #2d5342; color: #d9eee1; font-size: .52rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.seat__personality--rock { background: #40545a; } .seat__personality--shark { background: #285b76; } .seat__personality--maniac { background: #78363e; } .seat__personality--grinder { background: #5b5136; } .seat__personality--caller { background: #4b4968; }
 .seat__role { margin-top: 2px; color: #aabbb1; font-size: .62rem; }
 .seat__bankroll { margin-top: 5px; color: #e8c86f; font-size: .74rem; }
 .seat--human .seat__identity { border-color: #dfb652; box-shadow: 0 0 0 1px rgba(238, 194, 81, .25), 0 5px 15px rgba(0,0,0,.4); }

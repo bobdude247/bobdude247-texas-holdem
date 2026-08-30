@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { PokerTable } from './components/PokerTable'
-import { callingStationCpu } from './domain/holdem/cpu'
+import { createPersonalityController } from './domain/holdem/cpu'
 import { applyAction, legalActions, runCpuTurns, startNextHand } from './domain/holdem/engine'
 import { projectPublicMatch } from './domain/holdem/public'
 import type { PlayerAction } from './domain/holdem/types'
 import { formatChips } from './presentation/format'
-import { createTableMatch, humanSeat } from './presentation/tablePlayers'
+import { createTableMatch, humanSeat, tableCpuPersonalities } from './presentation/tablePlayers'
+
+const tableCpu = createPersonalityController(tableCpuPersonalities)
 
 export default function App() {
   const [match, setMatch] = useState(createTableMatch)
@@ -19,7 +21,7 @@ export default function App() {
 
   useEffect(() => {
     if (hand?.actingSeat === undefined || hand.phase === 'complete' || hand.players.find((player) => player.seat === hand.actingSeat)?.kind !== 'cpu') return
-    const timer = window.setTimeout(() => setMatch((current) => runCpuTurns(current, callingStationCpu, 1)), 300)
+    const timer = window.setTimeout(() => setMatch((current) => runCpuTurns(current, tableCpu, 1)), 300)
     return () => window.clearTimeout(timer)
   }, [hand])
 

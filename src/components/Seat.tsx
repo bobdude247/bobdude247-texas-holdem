@@ -2,6 +2,7 @@ import { formatChips } from '../presentation/format'
 import { formatCardShort, isRedSuit } from '../domain/cards'
 import type { PublicHandPlayer, PublicMatchPlayer } from '../domain/holdem/public'
 import { PlayingCard } from './PlayingCard'
+import { personalityForPlayer } from '../presentation/tablePlayers'
 
 interface SeatProps {
   readonly player: PublicMatchPlayer | PublicHandPlayer
@@ -17,6 +18,7 @@ export function Seat({ player, isDealer = false, isSmallBlind = false, isBigBlin
   const handPlayer = 'stack' in player ? player : undefined
   const bankroll = handPlayer?.stack ?? player.bankroll
   const cards = visibleCards.length === 2 ? visibleCards : undefined
+  const personality = personalityForPlayer(player.id)
 
   return (
     <article className={`seat seat--${player.seat}${isHuman ? ' seat--human' : ''}${isActing ? ' seat--acting' : ''}${handPlayer?.folded ? ' seat--folded' : ''}`}>
@@ -25,6 +27,7 @@ export function Seat({ player, isDealer = false, isSmallBlind = false, isBigBlin
       </div>
       <div className="seat__identity">
         <span className="seat__name">{player.name}</span>
+        {personality === undefined ? null : <span className={`seat__personality seat__personality--${personality.id}`} title={personality.description}>{personality.id}</span>}
         <span className="seat__role">{handPlayer?.folded ? 'Folded' : handPlayer?.allIn ? 'All-in' : player.isEliminated ? 'Eliminated' : isHuman ? 'You · Player' : 'CPU opponent'}</span>
         <strong className="seat__bankroll">{formatChips(bankroll)}</strong>
         {handPlayer !== undefined && handPlayer.streetContribution > 0 ? <span className="seat__commitment">In pot {formatChips(handPlayer.streetContribution)}</span> : null}

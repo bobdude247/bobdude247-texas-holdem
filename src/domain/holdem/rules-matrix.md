@@ -16,3 +16,6 @@
 | Conservation and per-transition invariants | `stress.test.ts`: `runs five reproducible seeds through multiple hands with legal actions and per-transition invariants` |
 | Observed action categories | `stress.test.ts` exact deterministic counts for folds, checks, calls, bets, full raises, short all-in raises, all-in calls for less, full all-ins, side pots, showdowns, uncontested wins, and eliminations; tied-pot proof remains `settlement.test.ts`: `splits a board-only tie` |
 | Multi-hand and match completion stress | `stress.test.ts`: five fixed seeds, 37 hands, five multi-hand completed matches, and five three-handed-to-heads-up transitions |
+| CPU personality assessment and legality | `cpu.test.ts`: `CPU assessments and deterministic personalities` |
+| CPU hidden-information invariance | `cpu.test.ts`: `is hidden-information invariant and does not mutate its context for every personality` |
+| CPU profile separation | `cpu.test.ts`: `profiles retain materially distinct documented parameters` |

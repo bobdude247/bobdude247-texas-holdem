@@ -1,8 +1,11 @@
 import { chips } from '../domain/game/types'
 import { createMatch } from '../domain/holdem/engine'
+import { cpuProfiles, type CpuPersonalityId } from '../domain/holdem/cpu'
 import type { MatchPlayer, MatchState } from '../domain/holdem/types'
 
 export const humanSeat = 3
+export const tableCpuPersonalities: Readonly<Record<number, CpuPersonalityId>> = { 0: 'rock', 1: 'shark', 2: 'maniac', 4: 'grinder', 5: 'caller' }
+export function personalityForPlayer(id: string) { return id in cpuProfiles ? cpuProfiles[id as CpuPersonalityId] : undefined }
 
 const players: readonly MatchPlayer[] = [
   { id: 'rock', name: 'The Rock', kind: 'cpu', seat: 0, bankroll: chips(10_000_000), isEliminated: false },
