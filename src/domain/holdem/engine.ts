@@ -312,7 +312,7 @@ export function assertChipConservation(match: MatchState): void {
 }
 
 /** Builds the only private view a CPU strategy may receive. */
-export function createCpuDecisionContext(match: MatchState, seat: SeatNumber): import('./types').CpuDecisionContext {
+export function createCpuDecisionContext(match: MatchState, seat: SeatNumber, tendencies?: import('./types').CpuDecisionContext['tendencies']): import('./types').CpuDecisionContext {
   const hand = match.hand
   if (hand === undefined || hand.phase === 'complete' || hand.actingSeat !== seat) throw new Error('It is not this CPU’s turn.')
   const player = findPlayer(hand.players, seat)
@@ -327,17 +327,20 @@ export function createCpuDecisionContext(match: MatchState, seat: SeatNumber): i
     players: hand.players.map(({ seat: playerSeat, stack, streetContribution, totalContribution, folded, allIn }) => ({ seat: playerSeat, stack, streetContribution, totalContribution, folded, allIn })),
     pots: buildPots(hand.players).pots.map((pot) => ({ ...pot, eligibleSeats: [...pot.eligibleSeats] })),
     button: hand.button,
+    tendencies: tendencies === undefined ? undefined : structuredClone(tendencies),
   }
 }
 
-export function runCpuTurns(match: MatchState, controller: CpuController, limit = 100): MatchState {
+export function runCpuTurns(match: MatchState, controller: CpuController, limit = 100, tendencies?: import('./types').CpuDecisionContext['tendencies'], onAction?: (context: import('./types').CpuDecisionContext, action: PlayerAction) => void): MatchState {
   let next = match
   for (let count = 0; count < limit; count += 1) {
     const hand = next.hand
     if (hand === undefined || hand.phase === 'complete' || hand.actingSeat === undefined) return next
     const player = findPlayer(hand.players, hand.actingSeat)
     if (player.kind !== 'cpu') return next
-    const action = controller(createCpuDecisionContext(next, player.seat))
+    const context = createCpuDecisionContext(next, player.seat, tendencies)
+    const action = controller(context)
+    onAction?.(context, action)
     next = applyAction(next, player.seat, action)
   }
   // The caller may deliberately process a single CPU action for presentation pacing.

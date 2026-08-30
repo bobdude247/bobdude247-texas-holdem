@@ -105,12 +105,17 @@ function decide(profile: CpuProfile, context: CpuDecisionContext, random: Random
   const price = context.legalActions.amountToCall === 0 ? 0 : context.legalActions.amountToCall / Math.max(1, pot(context) + context.legalActions.amountToCall)
   const stackPressure = own(context).stack / Math.max(1, context.legalActions.maximumTo)
   const shortBoost = stackPressure < .35 ? .12 : 0
-  const score = assessment.strength + position * profile.positionWeight + shortBoost
+  const opponentsMemory = Object.entries(context.tendencies ?? {}).filter(([seat]) => Number(seat) !== context.seat).map(([, tendency]) => tendency)
+  const credible = opponentsMemory.filter((tendency) => tendency.confidence >= .25)
+  const averageFold = credible.reduce((total, tendency) => total + tendency.foldToPressure, 0) / Math.max(1, credible.length)
+  const averageCalling = credible.reduce((total, tendency) => total + tendency.calling, 0) / Math.max(1, credible.length)
+  const exploit = profile.id === 'shark' ? (averageFold - .5) * .22 - (averageCalling - .5) * .16 : profile.id === 'grinder' ? (averageFold - .5) * .06 - (averageCalling - .5) * .05 : profile.id === 'rock' ? -(averageCalling - .5) * .03 : profile.id === 'maniac' ? (averageFold - .5) * .05 : 0
+  const score = assessment.strength + position * profile.positionWeight + shortBoost + exploit
   const canPressure = context.legalActions.canBet || context.legalActions.canRaise
   const randomValue = random()
   const valueRaise = score >= .7 && randomValue < profile.aggression
   const semiBluff = assessment.drawStrength >= .1 && randomValue < profile.semiBluff
-  const bluff = assessment.strength < .35 && context.legalActions.amountToCall === 0 && randomValue < profile.bluff
+  const bluff = assessment.strength < .35 && context.legalActions.amountToCall === 0 && randomValue < Math.max(0, profile.bluff + exploit)
   if (canPressure && (valueRaise || semiBluff || bluff)) return sizedAggression(context, profile.potFraction) ?? legalPassive(context)
   if (context.legalActions.amountToCall === 0) return legalPassive(context)
   if (score + profile.callTolerance + assessment.drawStrength < price + profile.enterThreshold * .28) return context.legalActions.canFold ? { type: 'fold' } : legalPassive(context)

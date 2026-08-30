@@ -109,6 +109,7 @@ export interface CpuDecisionContext {
   readonly players: readonly Pick<HandPlayer, 'seat' | 'stack' | 'streetContribution' | 'totalContribution' | 'folded' | 'allIn'>[]
   readonly pots: readonly Pot[]
   readonly button: SeatNumber
+  readonly tendencies?: Readonly<Record<number, import('./tendencies').PublicTendencySnapshot>>
 }
 
 export type CpuController = (context: CpuDecisionContext) => PlayerAction

@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PokerTable } from './components/PokerTable'
 import { createPersonalityController } from './domain/holdem/cpu'
 import { applyAction, legalActions, runCpuTurns, startNextHand } from './domain/holdem/engine'
 import { projectPublicMatch } from './domain/holdem/public'
 import type { PlayerAction } from './domain/holdem/types'
+import { PublicTendencyTracker } from './domain/holdem/tendencies'
 import { formatChips } from './presentation/format'
 import { createTableMatch, humanSeat, tableCpuPersonalities } from './presentation/tablePlayers'
 
@@ -13,6 +14,7 @@ export default function App() {
   const [match, setMatch] = useState(createTableMatch)
   const [raiseTo, setRaiseTo] = useState('')
   const [error, setError] = useState<string>()
+  const tendencies = useRef(PublicTendencyTracker.create())
   const hand = match.hand
   const publicMatch = projectPublicMatch(match, humanSeat)
   const publicHand = publicMatch.hand
@@ -21,19 +23,19 @@ export default function App() {
 
   useEffect(() => {
     if (hand?.actingSeat === undefined || hand.phase === 'complete' || hand.players.find((player) => player.seat === hand.actingSeat)?.kind !== 'cpu') return
-    const timer = window.setTimeout(() => setMatch((current) => runCpuTurns(current, tableCpu, 1)), 300)
+    const timer = window.setTimeout(() => setMatch((current) => runCpuTurns(current, tableCpu, 1, tendencies.current.snapshot(current.players.map((player) => player.seat)), (context, action) => { tendencies.current = observeAction(tendencies.current, context, action) })), 300)
     return () => window.clearTimeout(timer)
   }, [hand])
 
   function act(action: PlayerAction) {
     try {
-      setMatch((current) => applyAction(current, humanSeat, action))
+      setMatch((current) => { const next = applyAction(current, humanSeat, action); const context = { seat: humanSeat, legalActions: legalActions(current, humanSeat), board: current.hand!.board } as import('./domain/holdem/types').CpuDecisionContext; tendencies.current = observeAction(tendencies.current, context, action); return next })
       setError(undefined)
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Action could not be applied.') }
   }
 
   function deal() {
-    try { setMatch((current) => startNextHand(current)); setError(undefined) } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to deal a hand.') }
+    try { setMatch((current) => { const next = startNextHand(current); if (next.hand?.id === 1) tendencies.current = PublicTendencyTracker.create(); for (const player of next.hand?.players ?? []) if (player.holeCards.length === 2) tendencies.current = tendencies.current.observe({ type: 'hand', seat: player.seat }); return next }); setError(undefined) } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to deal a hand.') }
   }
 
   return (
@@ -77,4 +79,10 @@ export default function App() {
       {publicHand === undefined ? null : <section aria-label="Hand history" className="history-panel"><h2>Table history</h2><ol>{publicHand.history.slice(-8).map((item, index) => <li key={`${item.text}-${index}`}>{item.text}</li>)}</ol></section>}
     </main>
   )
+}
+
+function observeAction(tracker: PublicTendencyTracker, context: Pick<import('./domain/holdem/types').CpuDecisionContext, 'seat' | 'legalActions' | 'board'>, action: PlayerAction): PublicTendencyTracker {
+  const legal = context.legalActions
+  const allInKind = action.type !== 'all-in' ? undefined : legal.maximumTo <= legal.amountToCall ? 'call' : legal.canBet ? 'bet' : 'raise'
+  return tracker.observe({ type: 'action', seat: context.seat, action: action.type, preflop: context.board.length === 0, facingWager: legal.amountToCall > 0, voluntaryEntry: action.type !== 'check' && action.type !== 'fold', allInKind })
 }
