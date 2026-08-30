@@ -137,8 +137,8 @@ export function legalActions(match: MatchState, seat: SeatNumber): LegalActions 
   const cappedCallAmount = asChips(Math.min(amountToCall, player.stack))
   const maximumTo = asChips(player.streetContribution + player.stack)
   const opponents = opponentsCanRespond(hand, seat)
-  const canRaise = hand.currentBet > 0 && opponents && hand.currentBet >= raiseReopenAt(hand, seat) && maximumTo > hand.currentBet
-  const canAllIn = player.stack > 0 && opponents && (hand.currentBet === 0 || maximumTo <= hand.currentBet || canRaise)
+  const canRaise = hand.currentBet > 0 && opponents && hand.currentBet >= raiseReopenAt(hand, seat) && maximumTo >= hand.currentBet + hand.lastFullRaise
+  const canAllIn = player.stack > 0 && opponents && (hand.currentBet === 0 || maximumTo <= hand.currentBet || (hand.currentBet >= raiseReopenAt(hand, seat) && maximumTo > hand.currentBet))
   return {
     seat, amountToCall, cappedCallAmount,
     canFold: true,

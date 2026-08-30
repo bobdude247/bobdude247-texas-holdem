@@ -12,6 +12,8 @@ export default function App() {
   const [raiseTo, setRaiseTo] = useState('')
   const [error, setError] = useState<string>()
   const hand = match.hand
+  const publicMatch = projectPublicMatch(match, humanSeat)
+  const publicHand = publicMatch.hand
   const isHumanTurn = hand?.actingSeat === humanSeat
   const legal = isHumanTurn ? legalActions(match, humanSeat) : undefined
 
@@ -45,12 +47,12 @@ export default function App() {
         </div>
       </header>
 
-      <PokerTable match={projectPublicMatch(match, humanSeat)} />
+      <PokerTable match={publicMatch} />
 
       <section aria-label="Hand status and player actions" className="control-deck">
         <div className="table-message" role="status">
-          <span className="table-message__label">{hand === undefined ? 'Ready to play' : hand.phase === 'complete' ? 'Hand complete' : `${hand.phase} · ${hand.actingSeat === humanSeat ? 'Your turn' : 'Computer thinking'}`}</span>
-          <p>{match.matchWinnerSeat === undefined ? hand?.history.at(-1)?.text ?? 'Deal a hand to begin.' : `${match.players.find((player) => player.seat === match.matchWinnerSeat)?.name} wins the match.`}</p>
+          <span className="table-message__label">{publicHand === undefined ? 'Ready to play' : publicHand.phase === 'complete' ? 'Hand complete' : `${publicHand.phase} · ${publicHand.actingSeat === humanSeat ? 'Your turn' : 'Computer thinking'}`}</span>
+          <p>{publicMatch.matchWinnerSeat === undefined ? publicHand?.history.at(-1)?.text ?? 'Deal a hand to begin.' : `${publicMatch.players.find((player) => player.seat === publicMatch.matchWinnerSeat)?.name} wins the match.`}</p>
           {error === undefined ? null : <p className="validation-message" role="alert">{error}</p>}
         </div>
         <form className="action-panel">
@@ -70,7 +72,7 @@ export default function App() {
         </form>
         <button className="deal-button" disabled={hand !== undefined && hand.phase !== 'complete' || match.matchWinnerSeat !== undefined} onClick={deal} type="button">{hand?.phase === 'complete' ? 'Next Hand' : 'Deal Hand'}</button>
       </section>
-      {hand === undefined ? null : <section aria-label="Hand history" className="history-panel"><h2>Table history</h2><ol>{hand.history.slice(-8).map((item, index) => <li key={`${item.text}-${index}`}>{item.text}</li>)}</ol></section>}
+      {publicHand === undefined ? null : <section aria-label="Hand history" className="history-panel"><h2>Table history</h2><ol>{publicHand.history.slice(-8).map((item, index) => <li key={`${item.text}-${index}`}>{item.text}</li>)}</ol></section>}
     </main>
   )
 }

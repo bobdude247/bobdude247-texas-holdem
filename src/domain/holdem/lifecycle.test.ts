@@ -185,6 +185,27 @@ describe('CPU decision-context boundary', () => {
     expectCpuContext(next, 1)
   })
 
+  it('changes private cards with the acting CPU and owns every mutable context value', () => {
+    const preflop = begin()
+    const first = expectCpuContext(preflop, 3)
+    const flop = advanceTo(preflop, 'flop')
+    const second = expectCpuContext(flop, 1)
+    expect(second.holeCards).not.toEqual(first.holeCards)
+
+    const snapshot = structuredClone(flop)
+    const mutable = second as unknown as {
+      holeCards: Card[]; board: Card[]; legalActions: { maximumTo: number }; publicHistory: Array<{ text: string }>;
+      players: Array<{ stack: number }>; pots: Array<{ eligibleSeats: number[] }>
+    }
+    mutable.holeCards[0] = { rank: 'A', suit: 'spades' }
+    mutable.board[0] = { rank: 'K', suit: 'hearts' }
+    mutable.legalActions.maximumTo = 0
+    mutable.publicHistory[0].text = 'mutated'
+    mutable.players[0].stack = 0
+    if (mutable.pots[0] !== undefined) mutable.pots[0].eligibleSeats[0] = 99
+    expect(flop).toEqual(snapshot)
+  })
+
   it('does not call a CPU controller after showdown has completed', () => {
     const complete = begin(2, [1, 2])
     let invoked = false
