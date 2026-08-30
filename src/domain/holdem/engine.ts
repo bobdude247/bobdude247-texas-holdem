@@ -50,7 +50,7 @@ function post(handPlayers: readonly HandPlayer[], seat: SeatNumber, requested: C
 function dealHoleCards(players: readonly HandPlayer[], button: SeatNumber, deckCards: readonly Card[]): { players: HandPlayer[]; deckCards: readonly Card[] } {
   let deck = { cards: deckCards }
   let result = [...players]
-  const recipients = orderedFromLeftOf(players.map((player) => player.seat), button)
+  const recipients = orderedFromLeftOf(players.filter((player) => !player.isEliminated && player.stack > 0).map((player) => player.seat), button)
   for (let round = 0; round < 2; round += 1) {
     for (const seat of recipients) {
       const draw = drawCards(deck)

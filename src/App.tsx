@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { PokerTable } from './components/PokerTable'
 import { callingStationCpu } from './domain/holdem/cpu'
 import { applyAction, legalActions, runCpuTurns, startNextHand } from './domain/holdem/engine'
+import { projectPublicMatch } from './domain/holdem/public'
 import type { PlayerAction } from './domain/holdem/types'
 import { formatChips } from './presentation/format'
 import { createTableMatch, humanSeat } from './presentation/tablePlayers'
@@ -44,7 +45,7 @@ export default function App() {
         </div>
       </header>
 
-      <PokerTable match={match} viewerSeat={humanSeat} />
+      <PokerTable match={projectPublicMatch(match, humanSeat)} />
 
       <section aria-label="Hand status and player actions" className="control-deck">
         <div className="table-message" role="status">

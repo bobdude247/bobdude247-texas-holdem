@@ -33,6 +33,8 @@ npm run build
 
 Bet and raise actions use a canonical **raise-to** amount: the total amount a player has committed on the current street, not an incremental amount. The engine exposes legal action bounds and rejects invalid/out-of-turn actions without mutating prior state.
 
+A full raise reopens raising rights for all opponents still able to act. A short all-in raise increases the call amount but does not reopen a player who already acted; players who have not acted retain their normal legal options. Cumulative short-raise reopening is not yet implemented and remains a rules-engine audit limitation.
+
 ## Deployment
 
 The production build uses relative asset URLs so it deploys correctly under a GitHub Pages repository subpath. The Pages workflow must be enabled in the repository's Pages settings with **GitHub Actions** as the source.
