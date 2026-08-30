@@ -49,6 +49,8 @@ h1 span { color: #e4bd62; font-style: italic; }
 .seat__cards { display: flex; margin-right: -27px; }
 .seat__cards .playing-card { width: 35px; height: 49px; }
 .seat__cards .playing-card + .playing-card { margin-left: -22px; }
+.seat--human .seat__cards { margin-right: 0; }
+.seat--human .seat__cards .playing-card + .playing-card { margin-left: 4px; }
 .seat__identity { min-width: 0; padding: 8px 10px; border: 1px solid rgba(244, 224, 168, .27); border-radius: 7px; background: rgba(4, 19, 14, .78); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
 .seat__name, .seat__role, .seat__bankroll { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seat__name { font-size: .8rem; font-weight: 800; }
@@ -117,6 +119,9 @@ h1 span { color: #e4bd62; font-style: italic; }
   .seat__cards { margin-right: -18px; }
   .seat__cards .playing-card { width: 25px; height: 35px; }
   .seat__cards .playing-card + .playing-card { margin-left: -17px; }
+  .seat--human { width: 55%; grid-template-columns: 53px minmax(0, 1fr); }
+  .seat--human .seat__cards { margin-right: 0; }
+  .seat--human .seat__cards .playing-card + .playing-card { margin-left: 3px; }
   .seat__identity { padding: 4px 5px; border-radius: 5px; }
   .seat__name { font-size: .62rem; }
   .seat__personality { display: none; }
