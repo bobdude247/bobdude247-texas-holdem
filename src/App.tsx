@@ -14,6 +14,7 @@ export default function App() {
   const [match, setMatch] = useState(createTableMatch)
   const [raiseTo, setRaiseTo] = useState('')
   const [error, setError] = useState<string>()
+  const [historyExpanded, setHistoryExpanded] = useState(false)
   const tendencies = useRef(PublicTendencyTracker.create())
   const hand = match.hand
   const publicMatch = projectPublicMatch(match, humanSeat)
@@ -53,7 +54,7 @@ export default function App() {
 
       <PokerTable match={publicMatch} />
 
-      <section aria-label="Hand status and player actions" className="control-deck">
+      <section aria-label="Hand status and player actions" className={`control-deck${isHumanTurn ? ' control-deck--active' : ' control-deck--inactive'}`}>
         <div className="table-message" role="status">
           <span className="table-message__label">{publicHand === undefined ? 'Ready to play' : publicHand.phase === 'complete' ? 'Hand complete' : `${publicHand.phase} · ${publicHand.actingSeat === humanSeat ? 'Your turn' : 'Computer thinking'}`}</span>
           <p>{publicMatch.matchWinnerSeat === undefined ? publicHand?.history.at(-1)?.text ?? 'Deal a hand to begin.' : `${publicMatch.players.find((player) => player.seat === publicMatch.matchWinnerSeat)?.name} wins the match.`}</p>
@@ -76,7 +77,7 @@ export default function App() {
         </form>
         <button className="deal-button" disabled={hand !== undefined && hand.phase !== 'complete' || match.matchWinnerSeat !== undefined} onClick={deal} type="button">{hand?.phase === 'complete' ? 'Next Hand' : 'Deal Hand'}</button>
       </section>
-      {publicHand === undefined ? null : <section aria-label="Hand history" className="history-panel"><h2>Table history</h2><ol>{publicHand.history.slice(-8).map((item, index) => <li key={`${item.text}-${index}`}>{item.text}</li>)}</ol></section>}
+      {publicHand === undefined ? null : <section aria-label="Hand history" className={`history-panel${historyExpanded ? '' : ' history-panel--collapsed'}`}><div className="history-panel__heading"><h2>Table history</h2><button aria-controls="table-history" aria-expanded={historyExpanded} className="history-panel__toggle" onClick={() => setHistoryExpanded((expanded) => !expanded)} type="button">{historyExpanded ? 'Hide history' : 'Show history'}</button></div><ol id="table-history">{publicHand.history.slice(-8).map((item, index) => <li key={`${item.text}-${index}`}>{item.text}</li>)}</ol></section>}
     </main>
   )
 }

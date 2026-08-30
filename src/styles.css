@@ -56,6 +56,7 @@ h1 span { color: #e4bd62; font-style: italic; }
 .seat__personality--rock { background: #40545a; } .seat__personality--shark { background: #285b76; } .seat__personality--maniac { background: #78363e; } .seat__personality--grinder { background: #5b5136; } .seat__personality--caller { background: #4b4968; }
 .seat__role { margin-top: 2px; color: #aabbb1; font-size: .62rem; }
 .seat__bankroll { margin-top: 5px; color: #e8c86f; font-size: .74rem; }
+.seat__bankroll-compact { display: none; }
 .seat--human .seat__identity { border-color: #dfb652; box-shadow: 0 0 0 1px rgba(238, 194, 81, .25), 0 5px 15px rgba(0,0,0,.4); }
 .seat--acting .seat__identity { border-color: #f4bd51; box-shadow: 0 0 18px rgba(244, 189, 81, .48); }
 .seat--folded { opacity: .48; filter: grayscale(.7); }
@@ -88,26 +89,82 @@ h1 span { color: #e4bd62; font-style: italic; }
 .validation-message { color: #ffb1a9 !important; }
 .history-panel { width: min(1180px, 100%); margin: 18px auto 0; padding: 16px 18px; border: 1px solid rgba(194, 167, 98, .23); border-radius: 12px; background: rgba(7, 20, 15, .74); }
 .history-panel h2 { margin: 0 0 8px; color: #e5bd61; font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
+.history-panel__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.history-panel__toggle { display: none; }
 .history-panel ol { max-height: 144px; margin: 0; padding-left: 20px; overflow: auto; color: #cdd8d0; font-size: .78rem; line-height: 1.65; }
 
-@media (max-width: 780px) {
-  .app-shell { padding-top: 20px; }
-  .table-stage { min-height: 590px; transform: scale(.92); transform-origin: top center; margin-bottom: -44px; }
-  .table-felt { width: 108%; }
-  .seat { width: 165px; gap: 5px; }
-  .seat__identity { padding: 6px 7px; }
-  .seat--1 { right: -8%; } .seat--5 { left: -8%; }
-  .seat--2 { right: -3%; } .seat--4 { left: -3%; }
-  .control-deck { grid-template-columns: 1fr; }
+@media (max-width: 700px), (max-width: 900px) and (max-height: 500px) {
+  body { min-width: 0; min-height: 100svh; min-height: 100dvh; overflow-x: clip; }
+  .app-shell { min-height: 100svh; min-height: 100dvh; overflow: visible; padding: calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom)); }
+  .brand-bar { align-items: center; gap: 12px; margin-bottom: 10px; }
+  .brand-bar__kicker { font-size: .58rem; }
+  h1 { margin-top: 2px; font-size: clamp(1.15rem, 6vw, 1.5rem); white-space: nowrap; }
+  .game-status { display: none; }
+  .game-status__dot { width: 7px; height: 7px; }
+
+  .table-stage { min-height: 0; margin: 0 auto; display: block; }
+  .table-felt { width: 100%; min-height: 0; aspect-ratio: .9 / 1; border-width: 7px; border-radius: 39%; }
+  .table-felt::before { inset: 6px; }
+  .table-center { width: 62%; top: 48%; }
+  .table-center__eyebrow { font-size: .5rem; letter-spacing: .11em; }
+  .table-center__pot { margin: 3px 0 8px; font-size: clamp(1.2rem, 6vw, 1.55rem); }
+  .community-cards { gap: 3px; }
+  .community-cards .playing-card { width: clamp(30px, 9.8vw, 40px); height: clamp(42px, 13.4vw, 55px); }
+  .community-cards .card-face { font-size: .68rem; }
+  .side-pot-label { margin-top: 4px; font-size: .56rem; }
+
+  .seat { width: 39%; grid-template-columns: 26px minmax(0, 1fr); gap: 1px; }
+  .seat__cards { margin-right: -18px; }
+  .seat__cards .playing-card { width: 25px; height: 35px; }
+  .seat__cards .playing-card + .playing-card { margin-left: -17px; }
+  .seat__identity { padding: 4px 5px; border-radius: 5px; }
+  .seat__name { font-size: .62rem; }
+  .seat__personality { display: none; }
+  .seat__role { margin-top: 1px; font-size: .49rem; }
+  .seat__bankroll { margin-top: 2px; font-size: .59rem; }
+  .seat__bankroll-full { display: none; }
+  .seat__bankroll-compact { display: inline; }
+  .seat__commitment { margin-top: 1px; font-size: .48rem; }
+  .dealer-button { top: -7px; right: -6px; width: 18px; height: 18px; border-width: 1px; font-size: .56rem; }
+  .blind-marker { right: -4px; bottom: -5px; padding: 2px 3px; font-size: .44rem; }
+  .seat--0 { top: 2%; }
+  .seat--1 { top: 22%; right: 0; }
+  .seat--5 { top: 22%; left: 0; }
+  .seat--2 { top: 64%; right: 0; bottom: auto; }
+  .seat--4 { top: 64%; left: 0; bottom: auto; }
+  .seat--3 { top: 82%; bottom: auto; }
+
+  .control-deck { grid-template-columns: 1fr; gap: 10px; margin-top: 10px; padding: 12px; }
+  .table-message p { margin-top: 3px; font-size: .76rem; line-height: 1.3; }
+  .table-message__label { font-size: .56rem; letter-spacing: .1em; }
+  .action-panel { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .control-deck--inactive .action-panel { display: none; }
+  .control-deck--active .deal-button { display: none; }
+  .raise-control label { margin-bottom: 4px; font-size: .66rem; }
+  .raise-control__input { width: 100%; min-height: 44px; padding: 8px 10px; }
+  .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .action-buttons button, .deal-button { min-height: 44px; padding: 0 8px; font-size: .7rem; }
+
+  .history-panel { margin-top: 10px; padding: 11px 12px; }
+  .history-panel h2 { margin: 0; font-size: .66rem; }
+  .history-panel__toggle { display: block; min-height: 36px; border: 1px solid #526258; border-radius: 5px; padding: 0 9px; background: #1b2b23; color: #d7dfd9; font-size: .68rem; font-weight: 700; }
+  .history-panel--collapsed ol { display: none; }
+  .history-panel ol { margin-top: 8px; max-height: 112px; font-size: .7rem; }
 }
 
-@media (max-width: 520px) {
-  .brand-bar { align-items: start; flex-direction: column; gap: 11px; }
-  .table-stage { min-height: 500px; transform: scale(.66); margin-bottom: -174px; }
-  .table-felt { width: 145%; }
-  .control-deck { margin-top: 0; }
-  .action-panel { align-items: stretch; flex-direction: column; }
-  .raise-control__input { width: 100%; }
-  .action-buttons { display: grid; grid-template-columns: 1fr 1fr; }
-  .action-buttons button { padding-inline: 7px; font-size: .68rem; }
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  .app-shell { padding-left: calc(12px + env(safe-area-inset-left)); padding-right: calc(12px + env(safe-area-inset-right)); }
+  .brand-bar { margin-bottom: 6px; }
+  .table-stage { width: min(64vw, 530px); }
+  .table-felt { aspect-ratio: 1.65 / 1; }
+  .seat--1, .seat--5 { top: 19%; }
+  .seat--2, .seat--4 { top: 58%; }
+  .seat--3 { top: 76%; }
+  .control-deck { margin-top: 7px; }
+}
+
+@media (max-width: 340px) and (orientation: portrait) {
+  .control-deck--active { position: fixed; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom)); left: 10px; z-index: 10; width: auto; margin: 0; padding: 8px; }
+  .control-deck--active .table-message { display: none; }
+  .control-deck--active .raise-control label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }

@@ -17,6 +17,7 @@ export function Seat({ player, isDealer = false, isSmallBlind = false, isBigBlin
   const isHuman = player.kind === 'human'
   const handPlayer = 'stack' in player ? player : undefined
   const bankroll = handPlayer?.stack ?? player.bankroll
+  const bankrollLabel = formatChips(bankroll)
   const cards = visibleCards.length === 2 ? visibleCards : undefined
   const personality = personalityForPlayer(player.id)
 
@@ -29,7 +30,7 @@ export function Seat({ player, isDealer = false, isSmallBlind = false, isBigBlin
         <span className="seat__name">{player.name}</span>
         {personality === undefined ? null : <span className={`seat__personality seat__personality--${personality.id}`} title={personality.description}>{personality.id}</span>}
         <span className="seat__role">{handPlayer?.folded ? 'Folded' : handPlayer?.allIn ? 'All-in' : player.isEliminated ? 'Eliminated' : isHuman ? 'You · Player' : 'CPU opponent'}</span>
-        <strong className="seat__bankroll">{formatChips(bankroll)}</strong>
+        <strong aria-label={`Stack ${bankrollLabel}`} className="seat__bankroll"><span className="seat__bankroll-full">{bankrollLabel}</span><span aria-hidden="true" className="seat__bankroll-compact">{formatCompactChips(bankroll)}</span></strong>
         {handPlayer !== undefined && handPlayer.streetContribution > 0 ? <span className="seat__commitment">In pot {formatChips(handPlayer.streetContribution)}</span> : null}
       </div>
       {isDealer ? <span aria-label="Dealer button" className="dealer-button">D</span> : null}
@@ -37,4 +38,10 @@ export function Seat({ player, isDealer = false, isSmallBlind = false, isBigBlin
       {isBigBlind ? <span className="blind-marker blind-marker--big">BB</span> : null}
     </article>
   )
+}
+
+function formatCompactChips(amount: number): string {
+  if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(amount % 1_000_000 === 0 ? 0 : 1)}M`
+  if (amount >= 1_000) return `$${(amount / 1_000).toFixed(amount % 1_000 === 0 ? 0 : 1)}K`
+  return formatChips(amount as import('../domain/game/types').ChipAmount)
 }
