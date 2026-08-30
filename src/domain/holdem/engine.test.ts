@@ -16,6 +16,15 @@ function match(count = 6, stacks?: readonly number[], humanSeat = 3) {
 
 function start(state = match()) { return startNextHand(state, () => 0.42) }
 
+function shortBlindMatch(stacks: readonly number[], initialButton = 0) {
+  return createMatch(players(stacks.length, stacks, -1 as SeatNumber), {
+    seatCount: stacks.length,
+    initialButton,
+    smallBlind: chips(1),
+    bigBlind: chips(2),
+  })
+}
+
 describe('positions, blinds, and dealing', () => {
   it('assigns six-handed blinds, action, two hole cards, and no duplicate cards', () => {
     const state = start()
@@ -131,5 +140,77 @@ describe('pots, information boundary, and progression', () => {
     const funded = state.players.filter((player) => !player.isEliminated)
     expect(funded).toHaveLength(1)
     expect(state.matchWinnerSeat).toBe(funded[0].seat)
+  })
+})
+
+describe('blind all-ins, elimination timing, and rotation', () => {
+  it('lets the big blind act when the heads-up button small blind is all-in', () => {
+    let state = startNextHand(shortBlindMatch([1, 10]), () => 0.42)
+
+    expect(state.hand!).toMatchObject({ button: 0, smallBlindSeat: 0, bigBlindSeat: 1, actingSeat: 1 })
+    expect(state.hand!.players.find((player) => player.seat === 0)).toMatchObject({ stack: chips(0), allIn: true })
+    expect(legalActions(state, 1).canCheck).toBe(true)
+
+    state = applyAction(state, 1, { type: 'check' })
+    expect(state.hand!.phase).toBe('complete')
+    expect(state.hand!.board).toHaveLength(5)
+    assertChipConservation(state)
+  })
+
+  it('runs out a hand immediately when posting blinds leaves no player able to act', () => {
+    const state = startNextHand(shortBlindMatch([1, 2]), () => 0.42)
+
+    expect(state.hand!).toMatchObject({ phase: 'complete', actingSeat: undefined, showdown: true })
+    expect(state.hand!.board).toHaveLength(5)
+    expect(state.hand!.burnedCards).toHaveLength(3)
+    assertChipConservation(state)
+  })
+
+  it('eliminates only after settlement, skips the busted seat, and rotates four deterministic hands', () => {
+    let state = startNextHand(shortBlindMatch([10, 10, 1, 10]), () => 0.42)
+    expect([state.hand!.button, state.hand!.smallBlindSeat, state.hand!.bigBlindSeat, state.hand!.actingSeat]).toEqual([0, 1, 2, 3])
+    expect(state.hand!.players.find((player) => player.seat === 2)).toMatchObject({ stack: chips(0), allIn: true })
+    expect(state.players.find((player) => player.seat === 2)?.isEliminated).toBe(false)
+
+    state = applyAction(state, 3, { type: 'fold' })
+    state = applyAction(state, 0, { type: 'fold' })
+    state = applyAction(state, 1, { type: 'check' })
+    expect(state.hand!.phase).toBe('complete')
+    expect(state.players.find((player) => player.seat === 2)).toMatchObject({ bankroll: chips(0), isEliminated: true })
+    assertChipConservation(state)
+
+    state = startNextHand(state, () => 0.42)
+    expect([state.hand!.button, state.hand!.smallBlindSeat, state.hand!.bigBlindSeat, state.hand!.actingSeat]).toEqual([1, 3, 0, 1])
+    expect(state.hand!.players.find((player) => player.seat === 2)?.holeCards).toEqual([])
+    expect(state.hand!.deck.cards).toHaveLength(46)
+    state = applyAction(state, 1, { type: 'fold' })
+    state = applyAction(state, 3, { type: 'fold' })
+
+    state = startNextHand(state, () => 0.42)
+    expect([state.hand!.button, state.hand!.smallBlindSeat, state.hand!.bigBlindSeat, state.hand!.actingSeat]).toEqual([3, 0, 1, 3])
+    state = applyAction(state, 3, { type: 'fold' })
+    state = applyAction(state, 0, { type: 'fold' })
+
+    state = startNextHand(state, () => 0.42)
+    expect([state.hand!.button, state.hand!.smallBlindSeat, state.hand!.bigBlindSeat, state.hand!.actingSeat]).toEqual([0, 1, 3, 0])
+    state = applyAction(state, 0, { type: 'fold' })
+    state = applyAction(state, 1, { type: 'fold' })
+    expect(state.hand!.phase).toBe('complete')
+    assertChipConservation(state)
+  })
+
+  it('keeps an all-in blind winner funded, dealt, and eligible for the next hand', () => {
+    let state = startNextHand(shortBlindMatch([1, 10]), () => 0.42)
+    state = applyAction(state, 1, { type: 'fold' })
+
+    expect(state.hand!.phase).toBe('complete')
+    expect(state.players.find((player) => player.seat === 0)).toMatchObject({ bankroll: chips(2), isEliminated: false })
+    expect(state.matchWinnerSeat).toBeUndefined()
+
+    state = startNextHand(state, () => 0.42)
+    expect([state.hand!.button, state.hand!.smallBlindSeat, state.hand!.bigBlindSeat]).toEqual([1, 1, 0])
+    expect(state.hand!.players.find((player) => player.seat === 0)).toMatchObject({ holeCards: expect.any(Array), allIn: true, stack: chips(0) })
+    expect(state.hand!.players.find((player) => player.seat === 0)?.holeCards).toHaveLength(2)
+    assertChipConservation(state)
   })
 })

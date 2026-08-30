@@ -11,7 +11,7 @@ import type { ActionEvent, CpuController, HandPlayer, HandState, LegalActions, M
 const zero = chips(0)
 
 function asChips(value: number): ChipAmount { return chips(value) }
-function isLive(player: HandPlayer): boolean { return !player.folded }
+function isLive(player: HandPlayer): boolean { return !player.isEliminated && !player.folded }
 function canAct(player: HandPlayer): boolean { return isLive(player) && !player.allIn && player.stack > 0 }
 function findPlayer(players: readonly HandPlayer[], seat: SeatNumber): HandPlayer {
   const player = players.find((candidate) => candidate.seat === seat)
@@ -108,7 +108,7 @@ export function startNextHand(match: MatchState, random: RandomSource = systemRa
   const smallBlind = post(dealt.players, smallBlindSeat, match.config.smallBlind)
   const bigBlind = post(smallBlind.players, bigBlindSeat, match.config.bigBlind)
   const preflopSeats = bigBlind.players.filter(canAct).map((player) => player.seat)
-  const firstActor = funded.length === 2 ? button : nextSeat(preflopSeats, bigBlindSeat)
+  const firstActor = preflopSeats.length === 0 ? undefined : nextSeat(preflopSeats, bigBlindSeat)
   const currentBet = asChips(Math.max(smallBlind.amount, bigBlind.amount))
   const hand: HandState = {
     id: match.handNumber + 1, phase: 'preflop', button, smallBlindSeat, bigBlindSeat,
@@ -119,7 +119,8 @@ export function startNextHand(match: MatchState, random: RandomSource = systemRa
       event('blind', `${findPlayer(bigBlind.players, bigBlindSeat).name} posts big blind $${bigBlind.amount.toLocaleString()}`, bigBlindSeat),
     ], pots: [], payouts: [], winners: [],
   }
-  return { ...match, handNumber: hand.id, button, hand }
+  const started = { ...match, handNumber: hand.id, button, hand }
+  return firstActor === undefined ? runout(started, hand) : started
 }
 
 function opponentsCanRespond(hand: HandState, seat: SeatNumber): boolean {
