@@ -6,7 +6,7 @@ export interface PublicHandPlayer extends Omit<HandPlayer, 'holeCards'> {
   readonly revealedHoleCards?: readonly Card[]
 }
 
-export interface PublicHandState extends Omit<HandState, 'deck' | 'burnedCards' | 'players'> {
+export interface PublicHandState extends Omit<HandState, 'deck' | 'burnedCards' | 'players' | 'raiseReopenAt'> {
   readonly players: readonly PublicHandPlayer[]
 }
 
@@ -23,9 +23,10 @@ function revealed(player: HandPlayer, hand: HandState, viewerSeat: SeatNumber): 
 /** Projection intended for UI consumers. It intentionally contains no deck, burns, or unrevealed opponent cards. */
 export function projectPublicMatch(match: MatchState, viewerSeat: SeatNumber): PublicMatchState {
   if (match.hand === undefined) return { ...match }
-  const { deck: _deck, burnedCards: _burnedCards, players, ...rest } = match.hand
+  const { deck: _deck, burnedCards: _burnedCards, players, raiseReopenAt: _raiseReopenAt, ...rest } = match.hand
   void _deck
   void _burnedCards
+  void _raiseReopenAt
   return {
     ...match,
     hand: {
