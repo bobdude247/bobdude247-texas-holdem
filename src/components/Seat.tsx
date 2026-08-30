@@ -18,12 +18,13 @@ export function Seat({ player, isDealer = false, isSmallBlind = false, isBigBlin
   const handPlayer = 'stack' in player ? player : undefined
   const bankroll = handPlayer?.stack ?? player.bankroll
   const bankrollLabel = formatChips(bankroll)
-  const cards = visibleCards.length === 2 ? visibleCards : undefined
+  const cards = visibleCards.length === 2 && (isHuman || !handPlayer?.folded) ? visibleCards : undefined
+  const isRevealedCpu = !isHuman && cards !== undefined
   const personality = personalityForPlayer(player.id)
 
   return (
-    <article className={`seat seat--${player.seat}${isHuman ? ' seat--human' : ''}${isActing ? ' seat--acting' : ''}${handPlayer?.folded ? ' seat--folded' : ''}`}>
-      <div className="seat__cards" aria-label={isHuman ? 'Your hole cards are not dealt yet' : `${player.name}'s hidden hole cards`}>
+    <article className={`seat seat--${player.seat}${isHuman ? ' seat--human' : ''}${isRevealedCpu ? ' seat--revealed' : ''}${isActing ? ' seat--acting' : ''}${handPlayer?.folded ? ' seat--folded' : ''}`}>
+      <div className="seat__cards" aria-label={isHuman ? 'Your hole cards are not dealt yet' : isRevealedCpu ? `${player.name}'s revealed hole cards` : `${player.name}'s hidden hole cards`}>
         {[0, 1].map((index) => cards === undefined ? <PlayingCard faceDown={!isHuman} key={index} label={isHuman ? 'Your hole-card placeholder' : 'Hidden hole card'} /> : <PlayingCard key={index} label={formatCardShort(cards[index])}><span className={isRedSuit(cards[index].suit) ? 'card-face card-face--red' : 'card-face'}>{formatCardShort(cards[index])}</span></PlayingCard>)}
       </div>
       <div className="seat__identity">
